@@ -1,0 +1,10 @@
+name: MPlugin
+version: 1.0
+main: com.m4rvln.mplugin.Main
+description: M4RVlNs Server Plugin
+commands:
+  mplugin:
+  showcase:
+  togglehorserider:
+  fakeitem:
+  tempban:
