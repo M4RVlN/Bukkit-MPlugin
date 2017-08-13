@@ -7,5 +7,5 @@ public enum Commands
     togglehorserider,
     fakeitem,
     tempban,
-    //observe
+    observe
 }

@@ -123,12 +123,12 @@ public class CmdExecutor implements CommandExecutor, TabCompleter
                         player.openInventory(BanSystem.getGUI(player, name));
                     }
                     return true;
-                /*case observe:
+                case observe:
                     if(GamemodeObserve.isHidden(player))
                         GamemodeObserve.HidePlayer(player);
                     else
                         GamemodeObserve.ShowPlayer(player);
-                    return true;*/
+                    return true;
             }
         }
         return false;
