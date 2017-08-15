@@ -1,10 +1,10 @@
 package com.m4rvln.mplugin;
 
 import com.m4rvln.mplugin.gamemode.GamemodeObserve;
-import com.m4rvln.mplugin.item.ButtonItemEvents;
+import com.m4rvln.mplugin.item.ButtonItem;
+import com.m4rvln.mplugin.item.FakeItem;
 import com.m4rvln.mplugin.item.Showcase;
 import org.bukkit.Bukkit;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -13,8 +13,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.logging.Level;
 
 public class Main extends JavaPlugin
@@ -31,9 +29,10 @@ public class Main extends JavaPlugin
         PluginManager pm = getServer().getPluginManager();
 
         pm.registerEvents(new EventListener(), this);
+        pm.registerEvents(new FakeItem(), this);
         pm.registerEvents(new Showcase(), this);
         pm.registerEvents(new GamemodeObserve(), this);
-        pm.registerEvents(new ButtonItemEvents(), this);
+        pm.registerEvents(new ButtonItem(), this);
 
         InitializeCmds();
 

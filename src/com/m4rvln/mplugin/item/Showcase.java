@@ -30,7 +30,7 @@ import java.util.List;
 
 public class Showcase implements Listener
 {
-    public static ItemStack GetShowcaseItem(Material material,  int amount, short metavalue)
+    public static CraftItemStack GetShowcaseItem(Material material,  int amount, short metavalue)
     {
         if(material == Material.STICK)
         {
@@ -44,13 +44,11 @@ public class Showcase implements Listener
             meta.setLore(lore);
             item.setItemMeta(meta);
 
-            return item;
+            return CraftItemStack.asCraftCopy(item);
         }
         else if(material == Material.STEP || material == Material.WOOD_STEP)
         {
-            ItemStack item = new ItemStack(Material.STEP, amount, metavalue);
-
-            net.minecraft.server.v1_12_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
+            net.minecraft.server.v1_12_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(new ItemStack(Material.STEP, amount, metavalue));
             NBTTagCompound tag = null;
             if (!nmsStack.hasTag())
             {
@@ -62,13 +60,13 @@ public class Showcase implements Listener
             tag.setBoolean("showcase", true);
             nmsStack.setTag(tag);
 
-            item = CraftItemStack.asCraftMirror(nmsStack);
-            ItemMeta meta = item.getItemMeta();
+            ItemMeta meta = CraftItemStack.getItemMeta(nmsStack);
             meta.setDisplayName("§6Showcase");
+            CraftItemStack.setItemMeta(nmsStack, meta);
 
-            return item;
+            return CraftItemStack.asCraftMirror(nmsStack);
         }
-        return new ItemStack(Material.AIR);
+        return CraftItemStack.asCraftCopy(new ItemStack(Material.AIR));
     }
 
     public static ItemStack GetShowcaseItem(Material material,  int amount)
@@ -93,19 +91,12 @@ public class Showcase implements Listener
                 if (itemStack.getType() == Material.AIR) return;
                 if (itemStack.hasItemMeta() && itemStack.getItemMeta().getDisplayName().equals("§2§lShowcase Stick"))
                 {
-                    if (block.getType() == Material.STEP)
+                    if (block.getType() == Material.STEP || block.getType() == Material.WOOD_STEP)
                     {
                         if (!block.hasMetadata("showcase"))
-                        {
                             block.setMetadata("showcase", new FixedMetadataValue(Main.instance, new ItemStack(Material.AIR)));
-                            /*FallingBlock b = block.getWorld().spawnFallingBlock(block.getLocation().add(0.5D, 0.5D, 0.5D), new ItemStack(Material.GLASS).getData());
-                            b.setGravity(false);
-                            b.setVelocity(new Vector(0, 0, 0));*/
-                        }
                         else if(event.getPlayer().isSneaking())
-                        {
-                            BreakShowcase(block, event.getPlayer().getWorld());
-                        }
+                            RemoveShowcaseTag(block, event.getPlayer().getWorld());
                     }
                 }
                 else if (block.hasMetadata("showcase"))
@@ -113,7 +104,7 @@ public class Showcase implements Listener
                     if (((ItemStack) block.getMetadata("showcase").get(0).value()).getType() == Material.AIR)
                     {
                         Location location = block.getLocation().add(0.5D, 0.5D, 0.5D);
-                        ItemStack fakeItem = FakeItem.CreateShowcaseItem(new ItemStack(itemStack.getType(), 1));
+                        ItemStack fakeItem = FakeItem.CreateShowcaseItem(new ItemStack(itemStack.getType(), 1, itemStack.getDurability()));
                         Item i = event.getPlayer().getWorld().dropItem(location, fakeItem);
 
                         itemStack.setAmount(itemStack.getAmount() - 1);
@@ -126,73 +117,25 @@ public class Showcase implements Listener
         }
     }
 
-    private void BreakShowcase(Block block, World world)
+    private void RemoveShowcaseTag(Block block, World world)
     {
         if (block.hasMetadata("showcase"))
         {
-            ItemStack[] blocks = (ItemStack[])block.getDrops().toArray();
-            world.dropItemNaturally(block.getLocation(), GetShowcaseItem(blocks[0]));
-
             ItemStack slot = (ItemStack)block.getMetadata("showcase").get(0).value();
 
-            if(slot.getType() != Material.AIR)
+            if (slot.getType() != Material.AIR)
             {
-                world.dropItemNaturally(block.getLocation().add(0.5D, 0.5D, 0.5D), new ItemStack(slot.getType()));
+                world.dropItemNaturally(block.getLocation().add(0.5D, 0.5D, 0.5D), new ItemStack(slot.getType(), slot.getAmount(), slot.getDurability()));
                 slot.setAmount(0);
             }
             block.removeMetadata("showcase", Main.instance);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void OnShowcaseBreak(BlockBreakEvent event)
-    {
-        event.setDropItems(false);
-        BreakShowcase(event.getBlock(), event.getPlayer().getWorld());
-    }
+//Events ------------------------------------------
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void BreakShowcaseOnExplosion(EntityExplodeEvent event)
-    {
-        for (Block block : event.blockList())
-        {
-            if(block.hasMetadata("showcase"))
-                BreakShowcase(block, event.getLocation().getWorld());
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void AvoidHopperPickup(InventoryPickupItemEvent event)
-    {
-        if(FakeItem.isFake(event.getItem().getItemStack()))
-            event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void AvoidPlayerFishingItem(PlayerFishEvent event)
-    {
-        if(event.getState().equals(PlayerFishEvent.State.CAUGHT_ENTITY))
-            if(event.getCaught() instanceof Item)
-                if(FakeItem.isFake(((Item)event.getCaught()).getItemStack()))
-                    event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void AvoidFakeItemPickup(EntityPickupItemEvent event)
-    {
-        if(FakeItem.isFake(event.getItem().getItemStack()))
-            event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void AvoidShowcaseItemDespawn(ItemDespawnEvent event)
-    {
-        if(FakeItem.isShowcase(event.getEntity().getItemStack()))
-            event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void AvoidSlabStacking(BlockPlaceEvent event)
+    public void OnBlockPlace(BlockPlaceEvent event)
     {
         if(event.getBlock().hasMetadata("showcase"))
         {
@@ -205,8 +148,48 @@ public class Showcase implements Listener
         {
             NBTTagCompound tag = nmsStack.getTag();
             if (tag.hasKey("showcase"))
-                event.getBlock().setMetadata("showcase", new FixedMetadataValue(Main.instance, new ItemStack(Material.AIR)));
+                event.getBlockPlaced().setMetadata("showcase", new FixedMetadataValue(Main.instance, new ItemStack(Material.AIR)));
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void OnShowcaseBreak(BlockBreakEvent event)
+    {
+        Block block = event.getBlock();
+        if (block.hasMetadata("showcase"))
+        {
+            RemoveShowcaseTag(event.getBlock(), event.getPlayer().getWorld());
+
+            ItemStack[] blocks = new ItemStack[block.getDrops().size()];
+            blocks = block.getDrops().toArray(blocks);
+
+            event.setDropItems(false);
+            event.getPlayer().getWorld().dropItemNaturally(block.getLocation(), GetShowcaseItem(blocks[0]));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void BreakShowcaseOnExplosion(EntityExplodeEvent event)
+    {
+        for (Block block : event.blockList())
+        {
+            if(block.hasMetadata("showcase"))
+            {
+                RemoveShowcaseTag(block, event.getLocation().getWorld());
+
+                ItemStack[] blocks = new ItemStack[block.getDrops().size()];
+                blocks = block.getDrops().toArray(blocks);
+
+                event.getLocation().getWorld().dropItemNaturally(block.getLocation(), GetShowcaseItem(blocks[0]));
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void AvoidShowcaseItemDespawn(ItemDespawnEvent event)
+    {
+        if(FakeItem.isShowcase(event.getEntity().getItemStack()))
+            event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

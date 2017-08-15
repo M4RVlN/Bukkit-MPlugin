@@ -7,6 +7,9 @@ import net.minecraft.server.v1_12_R1.NBTTagCompound;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -16,9 +19,8 @@ import javax.swing.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public class ButtonItem
+public class ButtonItem implements Listener
 {
-
     public static CraftItemStack get(ItemStack stack, String title, List<String> lore, Executable action)
     {
         net.minecraft.server.v1_12_R1.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
@@ -92,5 +94,24 @@ public class ButtonItem
             }
         }
         return null;
+    }
+
+//Events ------------------------------------------
+
+    @EventHandler
+    public void InventoryClickEvent(InventoryClickEvent event)
+    {
+        if(ButtonItem.isButton(event.getCurrentItem()))
+        {
+            try
+            {
+                ButtonItem.getAction(event.getCurrentItem()).execute();
+            }
+            catch (Exception ex)
+            {
+                System.out.println("Error while trying to execute a ButtonItems action!");
+            }
+            event.setCancelled(true);
+        }
     }
 }
